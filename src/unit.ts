@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import * as fs from 'node:fs'
-import chalk from 'chalk'
+import { styleText } from 'node:util'
 import { program } from 'commander'
 import { array_opt, ExitCode } from './common/cli'
 import { createConsoleReporter } from './common/reporter/index.ts'
@@ -44,7 +44,7 @@ async function main(): Promise<ExitCode> {
 
 	// Early exit if no test cases found
 	if (test_cases.length === 0) {
-		console.error(chalk.red('ERROR') + ' no test cases found')
+		console.error(styleText('red', 'ERROR', { stream: process.stderr }) + ' no test cases found')
 		return ExitCode.Failure
 	}
 

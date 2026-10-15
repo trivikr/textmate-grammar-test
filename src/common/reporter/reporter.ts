@@ -1,6 +1,6 @@
 import { EOL } from 'node:os'
 import * as tty from 'node:tty'
-import chalk from 'chalk'
+import { styleText } from 'node:util'
 import type { GrammarTestFile, TestFailure } from '../../unit/types.ts'
 import { SYMBOLS } from '../cli'
 
@@ -21,13 +21,18 @@ if (isatty) {
 
 function handleGrammarTestError(filename: string, _testCase: GrammarTestFile, reason: any): void {
 	console.log(
-		chalk.red(SYMBOLS.err) + ' testcase ' + chalk.gray(filename) + ' aborted due to an error',
+		styleText('red', SYMBOLS.err) +
+			' testcase ' +
+			styleText('gray', filename) +
+			' aborted due to an error',
 	)
 	console.log(reason)
 }
 
 function handleParseError(filename: string, error: any): void {
-	console.log(chalk.red('ERROR') + " can't parse testcase: " + chalk.whiteBright(filename) + '')
+	console.log(
+		styleText('red', 'ERROR') + " can't parse testcase: " + styleText('whiteBright', filename) + '',
+	)
 	console.log(error)
 }
 
@@ -42,7 +47,12 @@ abstract class BaseConsoleReporter implements Reporter {
 	): void
 
 	protected reportSuccess(filename: string): void {
-		console.log(chalk.green(SYMBOLS.ok) + ' ' + chalk.whiteBright(filename) + ' run successfuly.')
+		console.log(
+			styleText('green', SYMBOLS.ok) +
+				' ' +
+				styleText('whiteBright', filename) +
+				' run successfuly.',
+		)
 	}
 }
 
@@ -79,11 +89,11 @@ class ConsoleFullReporter extends BaseConsoleReporter {
 		if (failures.length === 0) {
 			this.reportSuccess(filename)
 		} else {
-			console.log(chalk.red(SYMBOLS.err + ' ' + filename + ' failed'))
+			console.log(styleText('red', SYMBOLS.err + ' ' + filename + ' failed'))
 			failures.forEach((failure) => {
-				printAssertionLocation(filename, failure, Padding, console.log, chalk)
-				printSourceLine(failure, Padding, terminalWidth, console.log, chalk)
-				printReason(testCase, failure, Padding, console.log, chalk)
+				printAssertionLocation(filename, failure, Padding, console.log)
+				printSourceLine(failure, Padding, terminalWidth, console.log)
+				printReason(testCase, failure, Padding, console.log)
 
 				console.log(EOL)
 			})
@@ -97,10 +107,9 @@ function printAssertionLocation(
 	failure: TestFailure,
 	padding: string,
 	sink: (message: string) => void,
-	colorizer: Colorizer,
 ) {
 	const { l, s, e } = getCorrectedOffsets(failure)
-	sink(padding + 'at [' + colorizer.whiteBright(`${filename}:${l}:${s}:${e}`) + ']:')
+	sink(padding + 'at [' + styleText('whiteBright', `${filename}:${l}:${s}:${e}`) + ']:')
 }
 
 function getCorrectedOffsets(failure: TestFailure): {
@@ -120,7 +129,6 @@ function printSourceLine(
 	padding: string,
 	terminalWidth: number,
 	sink: (message: string) => void,
-	colorizer: Colorizer,
 ) {
 	const pos = failure.line + 1 + ': '
 	const accents = ' '.repeat(failure.start) + '^'.repeat(failure.end - failure.start)
@@ -132,7 +140,7 @@ function printSourceLine(
 	const line1 = failure.srcLineText.slice(trimLeft)
 	const accents1 = accents.slice(trimLeft)
 
-	sink(padding + colorizer.gray(pos) + line1.slice(0, termWidth))
+	sink(padding + styleText('gray', pos) + line1.slice(0, termWidth))
 	sink(padding + ' '.repeat(pos.length) + accents1.slice(0, termWidth))
 }
 
@@ -141,28 +149,22 @@ function printReason(
 	failure: TestFailure,
 	padding: string,
 	sink: (message: string) => void,
-	colorizer: Colorizer,
 ) {
 	if (failure.missing && failure.missing.length > 0) {
 		sink(
-			colorizer.red(padding + 'missing required scopes: ') +
-				colorizer.gray(failure.missing.join(' ')),
+			styleText('red', padding + 'missing required scopes: ') +
+				styleText('gray', failure.missing.join(' ')),
 		)
 	}
 	if (failure.unexpected && failure.unexpected.length > 0) {
 		sink(
-			colorizer.red(padding + 'prohibited scopes: ') + colorizer.gray(failure.unexpected.join(' ')),
+			styleText('red', padding + 'prohibited scopes: ') +
+				styleText('gray', failure.unexpected.join(' ')),
 		)
 	}
 	if (failure.actual !== undefined) {
-		sink(colorizer.red(padding + 'actual: ') + colorizer.gray(failure.actual.join(' ')))
+		sink(styleText('red', padding + 'actual: ') + styleText('gray', failure.actual.join(' ')))
 	}
-}
-
-interface Colorizer {
-	red(text: string): string
-	gray(text: string): string
-	whiteBright(text: string): string
 }
 
 export function createConsoleReporter(compact: boolean) {
